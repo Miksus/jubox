@@ -3,10 +3,19 @@
 
 > Programmatical Jupyter Notebook API for humans
 
-> Jupyter Notebook extension, Python 3, Object Oriented
+> Jupyter Notebook extension, Python 3, Easy to use
 
 
 ---
+
+![Example](docs/img/example.png "Rain Simulation")
+
+## Why?
+- There is lacking a generic and obvious approach to handle Jupyter Notebooks in Python code. 
+There are awesome tools, such as nbformat and nbconvert, but many of them are not easy to get into
+and require modeate amount of reading docs to get anything done.
+- Instead of scattering functionalities, everything is wrapped into a single class with all the
+necessary functionalities.
 
 ## Example
 
