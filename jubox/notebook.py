@@ -60,7 +60,6 @@ class JupyterNotebook:
         param_metadata = {} if metadata is None else metadata
         metadata = {"path": os.path.dirname(self.file) if hasattr(self, "file") else None}
         metadata.update(param_metadata)
-        print(metadata)
 
         ep = preprocessors.ExecutePreprocessor(kernel_name=self.kernel_name, timeout=timeout)
         out = ep.preprocess(node, {'metadata': metadata})
