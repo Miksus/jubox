@@ -96,7 +96,7 @@ class JupyterNotebook:
         self.load()
         return self
     
-    def __exit__(self):
+    def __exit__(self, exception_type, exception_value, traceback):
         self.save()
 
     def __getitem__(self, i):
