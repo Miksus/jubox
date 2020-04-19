@@ -4,6 +4,8 @@
 import re
 import os
 import copy
+import logging
+
 
 import nbformat
 
@@ -14,6 +16,8 @@ from nbconvert import preprocessors
 from pathlib import Path
 
 from .cell import JupyterCell
+
+logger = logging.getLogger(__name__)
 
 class JupyterNotebook:
 
@@ -37,6 +41,15 @@ class JupyterNotebook:
     -----------
         node [nbformat.notebooknode.NotebookNode] : Notebook data
         file [str, path-like] : File for the notebook (optional)
+    
+    Properties:
+    -----------
+        cells [List[JupyterCell]] : List of cells using Jubox's API. 
+            To get the native representation of the cells, use 
+            .node.cells or .cells.to_dict()
+        metadata [nbformat.notebooknode.NotebookNode.metadata] : Metadata
+            of the notebook. See https://nbformat.readthedocs.io/en/latest/
+
     """
 
     as_version = 4
@@ -46,10 +59,18 @@ class JupyterNotebook:
 
     def __init__(self, notebook=None):
         if isinstance(notebook, nbformat.notebooknode.NotebookNode):
+            logger.debug("Initiating notebook from nbformat.notebooknode.NotebookNode")
             self.node = notebook
         elif notebook is None:
+            # Creating empty notebook
+            logger.debug("Initiating empty notebook")
             self.node = new_notebook()
+        elif isinstance(notebook, (list, tuple)):
+            logger.debug("Initiating notebook from cells")
+            self.node = new_notebook()
+            self.cells = notebook
         else:
+            logger.debug("Initiating notebook from file")
             self.file = notebook
 
 # Generic
@@ -162,13 +183,26 @@ class JupyterNotebook:
     def cells(self):
         """Get cells of the notebook"""
         # TODO: API for the cells
-        # return JupyterCell.from_list(self.node.cells) # Upcoming
+        return JupyterCell.from_list(self.node.cells) # Upcoming
         return self.node.cells
 
     @cells.setter
     def cells(self, val):
         "Set cells in the nbformat.notebooknode.NotebookNode "
+        val = [item.to_dict() if isinstance(item, JupyterCell) else item for item in val]
         self.node.cells = val
+
+    @property
+    def metadata(self):
+        """Get the metadata of 
+        nbformat.notebooknode.NotebookNode"""
+        return self.node["metadata"]
+
+    @metadata.setter
+    def metadata(self, value):
+        """Set the metadata of 
+        nbformat.notebooknode.NotebookNode"""
+        self.node["metadata"] = value
 
 # Class methods
     @classmethod
@@ -215,6 +249,16 @@ class JupyterNotebook:
         if not inplace:
             return JupyterNotebook.from_node(node)
 
+    def append(self, cell):
+        "Append cell to the notebook"
+        cell = cell.data if isinstance(cell, JupyterCell) else cell
+        self.node.append(cell)
+
+    def insert(self, index, cell):
+        "Append cell to the notebook"
+        cell = cell.data if isinstance(cell, JupyterCell) else cell
+        self.node.insert(index, cell)
+
 # Validation
     def validate(self):
         "Validate the format of nbformat.notebooknode.NotebookNode"
@@ -224,7 +268,7 @@ class JupyterNotebook:
     def get_cells(self, cell_type=None, source=None, source_regex=None, tags=None, not_tags=None):
         "Get cells matching given parameters (return nbformat.notebooknode.NotebookNode.cell)"
         return [
-            cell for cell in self.node.cells 
+            cell for cell in self.cells 
             if  cell_has_tags(cell, tags=tags, not_tags=not_tags) 
             and cell_is_type(cell, cell_type=cell_type)
             and cell_is_source(cell, source=source)
