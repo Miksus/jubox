@@ -3,6 +3,8 @@
 # EXPERIMENTIAL!
 
 import copy
+import inspect
+import logging
 
 from nbformat.v4 import (
     new_notebook,
@@ -14,21 +16,29 @@ from nbformat.v4 import (
     new_output,
 )
 from nbconvert.filters import (
-    wrap_text,
+    wrap_text, ansi2html, html2text,
+    indent
 )
 
 from nbconvert import exporters
 from nbconvert import preprocessors
 
+logger = logging.getLogger(__name__)
+
 class JupyterCell:
 
     """Humane API for Jupyter Notebook Cells
 
-    This class is a wrapper and extension 
+    This class is a wrapper, compositor or view
     for nbformat.notebooknode.NotebookNode
     when NotebookNode points to cell data,
     ie. nbformat.v4.new_notebook().cells[0]
+
+    Only data attribute is stored and all
+    other should be put to the acutal data
+    of the cell
     """
+    
     
     def __init__(self, cell=None):
         self.data = cell
@@ -62,6 +72,15 @@ class JupyterCell:
             for cell in cells
         ]
 
+#   Code cells
+    @classmethod
+    def from_source_code(cls, string, outputs=None):
+        "Create code cell from string of source code"
+        cell = new_code_cell(string)
+        if outputs is not None:
+            cell.outputs = outputs
+        return cls(cell)
+
     @classmethod
     def from_object(cls, obj):
         "Create cell from Python object (dumps the source to the cell)"
@@ -69,13 +88,27 @@ class JupyterCell:
         return cls.from_source_code(source)
 
     @classmethod
-    def from_source_code(cls, string, outputs=None):
-        "Create code cell from string"
-        cell = new_code_cell(string)
-        if outputs is not None:
-            cell.outputs = outputs
-        return cls(cell)
+    def from_source_file(cls, file):
+        "Create cell from a source file"
+        with open(file, "r") as f:
+            code = f.read()
+        return cls.from_source_code(code)
 
+    @classmethod
+    def from_variable_dict(cls, var_dict=None, *, outputs=None, **kwargs):
+        """Create code cell from dictionary of variables. Useful for 
+        creating parameter cells"""
+        var_dict = {} if var_dict is None else var_dict
+        var_dict.update(kwargs)
+        
+        snippets = [
+            f"{key} = {repr(val)}" 
+            for key, val in var_dict.items()
+        ]
+        code = '\n'.join(snippets)
+        return cls.from_source_code(code, outputs=outputs)
+
+#   Other cells
     @classmethod
     def from_markdown(cls, string):
         "Create code cell from string"
@@ -97,6 +130,8 @@ class JupyterCell:
 
     def overwrite(self, value, inplace=False):
         cell = copy.deepcopy(self) if not inplace else self
+        if isinstance(value, JupyterCell):
+            value = value.data.source
         cell["source"] = value
         if not inplace:
             return cell
@@ -107,53 +142,73 @@ class JupyterCell:
 
     def __str__(self):
         width = 200
+        intendation = 7
         if self["cell_type"] == "code":
             exe_count = self["execution_count"]
+            intendation += len(str(exe_count)) - 1
 
-            source = self["source"]
-            display = ''.join([
-                output.get("data", {}).get("text/plain", "!NOT FOUND!")
+            input_block = self["source"]
+            display_block = ''.join([
+                convert_to_text_format(output)
                 for output in self["outputs"] 
-                if output["output_type"] == "display_data"
+                if output["output_type"] in ("display_data", "stream")
             ])
-            execution = [
-                output.get("data", {}).get("text/plain", "!NOT FOUND!")
+            execution_block = ''.join([
+                convert_to_text_format(output)
                 for output in self["outputs"] 
                 if output["output_type"] == "execute_result"
-            ]
+            ])
+            error_block = ''.join([
+                convert_to_text_format(output)
+                for output in self["outputs"] 
+                if output["output_type"] == "error"
+            ])
 
-            marginal = " " * (7 + len(str(exe_count)))
+            input_block = indent(input_block, nspaces=intendation)
+            display_block = indent(display_block, nspaces=intendation)
+            execution_block = indent(execution_block, nspaces=intendation)
+            error_block = indent(error_block, nspaces=intendation)
 
-            # Blocks
-            input_block = f"In [{exe_count}]: " + source.replace('\n', '\n' + marginal)
-            display_block = marginal + display.replace("\n", "\n"+ marginal)
-            execution_block = f"Out[{exe_count}]: " + execution.replace("\n", "\n" + marginal)
+            input_block = f"In [{exe_count}]: " + input_block[intendation:]
+            if execution_block != " " * intendation:
+                execution_block = f"Out[{exe_count}]: " + execution_block[intendation:]
+            if error_block != " " * intendation:
+                error_block = f"Out[{exe_count}]: " + error_block[intendation:]
 
-            string = input_block + "\n" + display_block + "\n" + execution_block
+            string = ""
+            for block in (input_block, display_block, execution_block, error_block):
+                if block:
+                    string += '\n' + block
 
         else:
-            string = self["source"]
+            string = indent(self["source"], nspaces=intendation)
 
-        squeezed_string = wrap_text(string, width=width - 4)
+        squeezed_string = wrap_text(string, width=width)
 
         return squeezed_string
 
-# Outputs
-    @property
-    def display_outputs(self):
-        return [
-            output.get("data", {}).get("text/plain", "!NOT FOUND!")
-            for output in self["outputs"] 
-            if output["output_type"] == "display_data"
-        ]
 
 # Fetch
-    def get_outputs(self, output_type=None, format=None):
+    def get_output_as_html(self, **kwargs):
+        return '<br>'.join([
+            convert_to_html_format(output)
+            for output in self["outputs"]
+            if output_isin(output, **kwargs)
+        ])
+
+    def get_output_as_text(self, **kwargs):
+        return '\n'.join([
+            convert_to_text_format(output)
+            for output in self["outputs"]
+            if output_isin(output, **kwargs)
+        ])
+
+
+    def get_outputs(self, mime_formats=None, output_types=None):
         return [
             output
             for output in self["outputs"]
-            if output_is_type(output, output_type)
-            and output_has_format(output, format)
+            if output_isin(output, output_types=output_types, mime_formats=mime_formats)
         ]
 
 # Faking
@@ -168,14 +223,42 @@ class JupyterCell:
         "Fakes nbformat.notebooknode.NotebookNode behaviour"
         self.data[item] = val
 
-# Problems with the following. setattr hits infinite recursion
+    @property
+    def source(self):
+        return self.data.source
+
+    @source.setter
+    def source(self, val):
+        self.data.source = val
+
+    @property
+    def cell_type(self):
+        return self.data.cell_type
+
+    @cell_type.setter
+    def cell_type(self, val):
+        self.data.cell_type = val
+
+    @property
+    def metadata(self):
+        return self.data.source
+
+    @metadata.setter
+    def metadata(self, val):
+        self.data.metadata = val
+
+# Problems with the following. setattr & copy hits infinite recursion
 #    def __getattr__(self, name):
 #        "Fakes nbformat.notebooknode.NotebookNode behaviour"
 #        return getattr(self.data, name)
 #
 #    def __setattr__(self, attr, val):
-#        "Fakes nbformat.notebooknode.NotebookNode behaviour"
-#        setattr(self.data, attr, val)
+#        """Fakes nbformat.notebooknode.NotebookNode behaviour
+#        JupyterCell can only store data attribute. All other
+#        attributes should be class attributes or be put to 
+#        the data. This is only a convenient view to the cells"""
+#        if attr != "data":
+#            setattr(self.data, attr, val)
 
 # Boolean functions
     def has_tags(self, tags=None, not_tags=None):
@@ -212,8 +295,68 @@ class JupyterCell:
             
         return re.match(regex, self["source"])
 
+    def is_type(self, *output_types):
+        return self["output_type"] in output_types
 
-def output_has_format(output, format=None):
-    if format is None:
-        return True
-    data = output.get("data")
+    def has_output(self):
+        return bool(self.get("outputs", False))
+
+# MIME types: https://www.freeformatter.com/mime-types-list.html
+
+def convert_to_text_format(output):
+    if output["output_type"] == "stream":
+        return output["text"]
+
+    elif output["output_type"] in ("display_data", "execute_result"):
+        data = output["data"]
+        if "text/plain" in data:
+            text = data["text/plain"]
+        elif "text/html" in data:
+            text = html2text(data["text/html"])
+        else:
+            text = ""
+
+    elif output["output_type"] == "error":
+        text = '\n'.join(output["traceback"])
+
+    else:
+        raise KeyError(f"Invalid output type of output: {output['output_type']}")
+
+    logger.debug(f"Conversion: {output} --> {text}")
+    return text
+
+def convert_to_html_format(output):
+    
+    if output["output_type"] == "stream":
+        html = '<br>'.join(ansi2html(output["text"]))
+        
+
+    elif output["output_type"] in ("display_data", "execute_result"):
+        data = output["data"]
+        if "text/html" in data:
+            logger.debug("Display output as  output to HTML")
+            html = data["text/html"]
+        elif "text/plain" in data:
+            html = ansi2html(data["text/plain"])
+        else:
+            html = ""
+
+    elif output["output_type"] == "error":
+        html = '<br>'.join(ansi2html(lvl) for lvl in output["traceback"])
+    else:
+        raise KeyError(f"Invalid output type of output: {output['output_type']}")
+    
+    logger.debug(f"Conversion: {output} --> {html}")
+    return html
+
+
+def output_isin(output, output_types=None, mime_formats=None):
+
+    isin_output_type = output_types is None or output["output_type"] in output_types 
+    isin_mime_format = output_types is None or (
+        output["output_type"] in ("display_data", "execute_result")
+        and any(key in mime_formats for key in data)
+    )
+    logger.debug(f"Check: {output} --> Type: {isin_output_type}, Mime format: {isin_mime_format}")
+    return isin_output_type and isin_mime_format
+    
