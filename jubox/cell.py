@@ -2,10 +2,12 @@
 # WIP!
 # EXPERIMENTIAL!
 
+import re
 import copy
 import inspect
 import logging
 
+import nbformat
 from nbformat.v4 import (
     new_notebook,
 
@@ -15,6 +17,7 @@ from nbformat.v4 import (
 
     new_output,
 )
+
 from nbconvert.filters import (
     wrap_text, ansi2html, html2text,
     indent
@@ -39,8 +42,30 @@ class JupyterCell:
     of the cell
     """
     
+
+    default_cell_type = "code"
+
+    # TODO: Use the following attribute
+    # everywhere where new cell functions are used
+    # to make the support for different versions of
+    # nbformat less painful
+    _new_cell_funcs = {
+        "code" : new_code_cell,
+        "markdown" : new_markdown_cell,
+        "raw" : new_raw_cell,
+    }
     
-    def __init__(self, cell=None):
+    def __init__(self, cell=None, *, cell_type=None):
+        cell_type = cell_type if cell_type is not None else self.default_cell_type
+        if isinstance(cell, str):
+            cell = self._new_cell_funcs[cell_type](cell)
+
+        elif isinstance(cell, nbformat.notebooknode.NotebookNode):
+            pass
+        elif cell is None:
+            cell = self._new_cell_funcs[cell_type]()
+        else:
+            raise TypeError(f"Unknown cell conversion for type {type(cell)}")
         self.data = cell
 
     def __call__(self, *args, timeout=None, metadata=None, inplace=False, **kwargs):
