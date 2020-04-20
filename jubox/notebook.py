@@ -252,12 +252,12 @@ class JupyterNotebook:
     def append(self, cell):
         "Append cell to the notebook"
         cell = cell.data if isinstance(cell, JupyterCell) else cell
-        self.node.append(cell)
+        self.node.cells.append(cell)
 
     def insert(self, index, cell):
         "Append cell to the notebook"
         cell = cell.data if isinstance(cell, JupyterCell) else cell
-        self.node.insert(index, cell)
+        self.node.cells.insert(index, cell)
 
 # Validation
     def validate(self):
