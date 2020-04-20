@@ -6,8 +6,9 @@ import pytest
 from jubox import JupyterNotebook, JupyterCell
 from nbformat.notebooknode import NotebookNode
 
-def test_creation_from_file(notebook_folder):
-    file = f"{notebook_folder}/nb_simple.ipynb"
+def test_creation_from_file(notebook_file_simple):
+    #file = f"{notebook_folder}/nb_simple.ipynb"
+    file = notebook_file_simple
     nb = JupyterNotebook(file)
     assert nb.file == file
     assert isinstance(nb.node, NotebookNode)
