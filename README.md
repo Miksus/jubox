@@ -20,7 +20,7 @@ necessary functionalities.
 ## Example
 
 ```python
-from jubox import JupyterNotebook
+from jubox import JupyterNotebook, JupyterCell
 
 # Load jupyter Notebook
 nb = JupyterNotebook("my_file.ipynb")
@@ -48,13 +48,22 @@ nb.to_python("notebook_code.py")
 
 # Get cells with specific tags
 param_cells = nb.get_cells(tags=["parametrized"])
+
+# Rewrite the first tagged cell with dict of parameters
+new_cell = JupyterCell.from_variable_dict(run_date="2020-01-01", category="blue")
+param_cells[0].overwrite(new_cell, inplace=True)
+
 ```
 
 ## Installation
 
 
-- Clone or download the source code this repo to your local machine. Pip install coming when I have time.
-
+- Clone the source code and pip install:
+```shell
+git clone https://github.com/Miksus/jubox.git
+cd jubox
+pip install -e .
+```
 
 ---
 
