@@ -2,7 +2,24 @@
 from jubox import JupyterCell
 from nbformat.notebooknode import NotebookNode
 
-def test_creation_empty():
+def test_initiation():
+    cell = JupyterCell("x = 5")
+    assert isinstance(cell.to_dict(), NotebookNode)
+    assert cell.data.source == "x = 5"
+
+def test_initiation_with_type():
+    cell = JupyterCell("x = 5", cell_type="raw")
+    assert isinstance(cell.to_dict(), NotebookNode)
+    assert cell.data.source == "x = 5"
+    assert cell.data.cell_type == "raw"
+
+def test_initiation_with_tag():
+    cell = JupyterCell("x = 5", tags=["tagged"])
+    assert isinstance(cell.to_dict(), NotebookNode)
+    assert cell.data.source == "x = 5"
+    assert ["tagged"] == cell.data["metadata"]["tags"]
+
+def test_initiation_empty():
     cell = JupyterCell()
     assert isinstance(cell.to_dict(), NotebookNode)
 

@@ -75,6 +75,17 @@ def notebook_file_prerun(tmpdir):
     return filename
 
 @pytest.fixture#(scope="module")
+def notebook_file_unrun(tmpdir):
+    # TODO
+    path = Path(os.path.dirname(__file__)) / "test_files"  / "nb_unrun.ipynb"
+
+    fh = tmpdir.join("notebook.ipynb")
+    with open(path) as f:
+        fh.write(f.read())
+    filename = os.path.join( fh.dirname, fh.basename )
+    return filename
+
+@pytest.fixture#(scope="module")
 def notebook_file_with_error(tmpdir):
     # TODO
     path = Path(os.path.dirname(__file__)) / "test_files"  / "nb_with_error.ipynb"

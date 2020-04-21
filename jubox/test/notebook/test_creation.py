@@ -27,6 +27,20 @@ def test_creation_empty():
 
 def test_creation_list_of_cells():
     nb = JupyterNotebook([
+        JupyterCell("1 cell"),
+        JupyterCell("2 cell"),
+        JupyterCell("3 cell"),
+    ])
+    assert isinstance(nb.node, NotebookNode)
+    assert len(nb.node.cells) == 3
+    assert isinstance(nb.node.cells[0], NotebookNode)
+
+    assert "1 cell" == nb.node.cells[0]["source"]
+    assert "2 cell" == nb.node.cells[1]["source"]
+    assert "3 cell" == nb.node.cells[2]["source"]
+
+def test_creation_list_of_empty_cells():
+    nb = JupyterNotebook([
         JupyterCell(),
         JupyterCell(),
         JupyterCell(),
@@ -34,3 +48,4 @@ def test_creation_list_of_cells():
     assert isinstance(nb.node, NotebookNode)
     assert len(nb.node.cells) == 3
     assert isinstance(nb.node.cells[0], NotebookNode)
+
