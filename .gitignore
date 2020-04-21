@@ -27,3 +27,11 @@ venv.bak/
 
 # Testing
 .pytest_cache/
+
+# Packaging
+Jubox.egg-info/
+build/
+dist/
+
+# Prototyping files & manual testing
+proto/
