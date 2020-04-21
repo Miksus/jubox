@@ -55,15 +55,20 @@ class JupyterCell:
         "raw" : new_raw_cell,
     }
     
-    def __init__(self, cell=None, *, cell_type=None):
-        cell_type = cell_type if cell_type is not None else self.default_cell_type
-        if isinstance(cell, str):
-            cell = self._new_cell_funcs[cell_type](cell)
+    def __init__(self, cell=None, *, cell_type=None, **kwargs):
 
-        elif isinstance(cell, nbformat.notebooknode.NotebookNode):
-            pass
-        elif cell is None:
-            cell = self._new_cell_funcs[cell_type]()
+
+        if isinstance(cell, str) or cell is None:
+            cell_type = cell_type or self.default_cell_type
+            args = () if cell is None else (cell,)
+            cell = self._new_cell_funcs[cell_type](*args, **self._parse_kwargs(cell_type, **kwargs))
+        elif isinstance(cell, nbformat.notebooknode.NotebookNode) or isinstance(cell, JupyterCell):
+            cell_type = cell["cell_type"]
+            kwds = self._parse_kwargs(cell_type, **kwargs)
+            cell["metadata"].update(kwds.get("metadata", {}))
+            if cell_type == "code":
+                cell["execution_count"] = kwds.get("execution_count", cell["execution_count"])
+                cell["outputs"] = kwds.get("outputs", cell["outputs"])
         else:
             raise TypeError(f"Unknown cell conversion for type {type(cell)}")
         self.data = cell
@@ -99,12 +104,10 @@ class JupyterCell:
 
 #   Code cells
     @classmethod
-    def from_source_code(cls, string, outputs=None):
+    def from_source_code(cls, string, **kwargs):
         "Create code cell from string of source code"
         cell = new_code_cell(string)
-        if outputs is not None:
-            cell.outputs = outputs
-        return cls(cell)
+        return cls(cell, **kwargs)
 
     @classmethod
     def from_object(cls, obj):
@@ -160,6 +163,16 @@ class JupyterCell:
         cell["source"] = value
         if not inplace:
             return cell
+
+    def append(self, value:str):
+        "Append string to the cell"
+        src = self["source"]
+        self["source"] = src + value
+
+    def insert(self, index:int, value:str):
+        "Insert string to the cell"
+        src = self["source"]
+        self["source"] = src[:index] + value + src[index:]
 
 # Representation
     def __repr__(self):
@@ -272,6 +285,7 @@ class JupyterCell:
     def metadata(self, val):
         self.data.metadata = val
 
+
 # Problems with the following. setattr & copy hits infinite recursion
 #    def __getattr__(self, name):
 #        "Fakes nbformat.notebooknode.NotebookNode behaviour"
@@ -325,6 +339,22 @@ class JupyterCell:
 
     def has_output(self):
         return bool(self.get("outputs", False))
+
+# Utils
+    @staticmethod
+    def _parse_kwargs(cell_type, outputs=None, execution_count=None, metadata=None, **kwargs):
+        
+        metadata = {} if metadata is None else metadata
+        metadata.update(kwargs)
+        if cell_type == "code":
+            outputs = [] if outputs is None else outputs
+            return {"outputs": outputs, "execution_count": execution_count, "metadata": metadata}
+        else:
+            if outputs is not None:
+                metadata.update({"outputs": outputs})
+            if execution_count is not None:
+                metadata.update({"execution_count": execution_count})
+            return {"metadata": metadata}
 
 # MIME types: https://www.freeformatter.com/mime-types-list.html
 
