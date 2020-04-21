@@ -42,13 +42,55 @@ def test_setitem():
         JupyterCell("third cell"),
     ])
 
-    nb[0] = JupyterCell("overwritten cell")
+    nb[0] = JupyterCell("overwritten cell a")
     assert isinstance(nb[0], JupyterCell)
-    assert nb[0]["source"] == "overwritten cell"
+    assert nb[0]["source"] == "overwritten cell a"
 
-    nb[1] = new_code_cell("overwritten cell")
+    nb[1] = new_code_cell("overwritten cell b")
     assert isinstance(nb[0], JupyterCell)
-    assert nb[1]["source"] == "overwritten cell"
+    assert nb[1]["source"] == "overwritten cell b"
+
+def test_setitem_slice():
+    #file = f"{notebook_folder}/nb_simple.ipynb"
+    nb = JupyterNotebook([
+        JupyterCell("first cell"),
+        JupyterCell("second cell"),
+        JupyterCell("third cell"),
+    ])
+
+    nb[0:2] = [JupyterCell("overwritten cell 1a"), JupyterCell("overwritten cell 2a")]
+    assert isinstance(nb[0], JupyterCell)
+    assert nb[0]["source"] == "overwritten cell 1a"
+    assert nb[1]["source"] == "overwritten cell 2a"
+
+    nb[0:2] = [new_code_cell("overwritten cell 1b"), new_code_cell("overwritten cell 2b")] 
+    assert isinstance(nb[0], JupyterCell)
+    assert nb[0]["source"] == "overwritten cell 1b"
+    assert nb[1]["source"] == "overwritten cell 2b"
+
+def test_delitem():
+    #file = f"{notebook_folder}/nb_simple.ipynb"
+    nb = JupyterNotebook([
+        JupyterCell("first cell"),
+        JupyterCell("second cell"),
+        JupyterCell("third cell"),
+    ])
+
+    del nb[1]
+    assert nb[0]["source"] == "first cell"
+    assert nb[1]["source"] == "third cell"
+    assert 2 == len(nb.node.cells)
+
+def test_delitem_slice():
+    nb = JupyterNotebook([
+        JupyterCell("first cell"),
+        JupyterCell("second cell"),
+        JupyterCell("third cell"),
+    ])
+
+    del nb[0:2]
+    assert nb[0]["source"] == "third cell"
+    assert 1 == len(nb.node.cells)
 
 def test_iter():
     #file = f"{notebook_folder}/nb_simple.ipynb"
