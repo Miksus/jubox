@@ -7,6 +7,8 @@ import copy
 import inspect
 import logging
 
+from .base import JupyterObject
+
 import nbformat
 from nbformat.v4 import (
     new_notebook,
@@ -28,7 +30,7 @@ from nbconvert import preprocessors
 
 logger = logging.getLogger(__name__)
 
-class JupyterCell:
+class JupyterCell(JupyterObject):
 
     """Humane API for Jupyter Notebook Cells
 

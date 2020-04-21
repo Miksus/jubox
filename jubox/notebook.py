@@ -16,10 +16,11 @@ from nbconvert import preprocessors
 from pathlib import Path
 
 from .cell import JupyterCell
+from .base import JupyterObject
 
 logger = logging.getLogger(__name__)
 
-class JupyterNotebook:
+class JupyterNotebook(JupyterObject):
 
     """Humane API for Jupyter Notebooks
 
@@ -52,8 +53,7 @@ class JupyterNotebook:
 
     """
 
-    as_version = 4
-    kernel_name = "python3"
+
 
     html_exporter = exporters.HTMLExporter()
 
