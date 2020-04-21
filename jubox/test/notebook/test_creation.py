@@ -14,8 +14,8 @@ def test_creation_from_file(notebook_file_simple):
     assert isinstance(nb.node, NotebookNode)
     assert nb.node.cells[0].source == "# This is simple Jupyter Notebook"
 
-def test_creation_from_pathlib_file(notebook_folder):
-    file = Path(notebook_folder) / "/nb_simple.ipynb"
+def test_creation_from_pathlib_file(notebook_file_simple):
+    file = Path(notebook_file_simple)
     nb = JupyterNotebook(file)
     assert nb.file == file
     assert isinstance(nb.node, NotebookNode)
