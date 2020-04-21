@@ -108,10 +108,24 @@ class JupyterNotebook:
         else:
             return cells
 
+    def __setitem__(self, item, val):
+        "Set cells in the notebook"
+        if not isinstance(item, slice):
+            # Overwrite the cell
+            val = val.to_dict() if isinstance(val, JupyterCell) else val
+            self.node.cells[item] = val
+        else:
+            values = [elem.to_dict() if isinstance(elem, JupyterCell) else elem for elem in val]
+            self.node.cells[item] = values
+
+    def __delitem__(self, item):
+        del self.node.cells[item]
+
 # IO
     def load(self):
         "(Re)load the notebook"
-        self.node = nbformat.read(self.file, as_version=self.as_version)
+        # NOTE: nbformat.read does not like pathlib.Path
+        self.node = nbformat.read(str(self.file), as_version=self.as_version)
 
     def save(self):
         "Save the notebook to original path"
@@ -182,9 +196,7 @@ class JupyterNotebook:
     @property
     def cells(self):
         """Get cells of the notebook"""
-        # TODO: API for the cells
-        return JupyterCell.from_list(self.node.cells) # Upcoming
-        return self.node.cells
+        return JupyterCell.from_list(self.node.cells)
 
     @cells.setter
     def cells(self, val):
