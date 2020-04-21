@@ -1,5 +1,6 @@
 
 # JuBox
+[![Build Status](https://travis-ci.com/Miksus/jubox.svg?branch=master)](https://travis-ci.com/Miksus/jubox)
 
 > Programmatical Jupyter Notebook API for humans
 
