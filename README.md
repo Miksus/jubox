@@ -57,6 +57,10 @@ param_cells[0].overwrite(new_cell, inplace=True)
 
 ## Installation
 
+- Pip install from pip
+```shell
+pip install jubox
+```
 
 - Clone the source code and pip install:
 ```shell
