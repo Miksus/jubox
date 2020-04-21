@@ -11,12 +11,26 @@
 
 ![Example](docs/img/example.png "Rain Simulation")
 
-## Why?
-- There is lacking a generic and obvious approach to handle Jupyter Notebooks in Python code. 
-There are awesome tools, such as nbformat and nbconvert, but many of them are not easy to get into
-and require modeate amount of reading docs to get anything done.
-- Instead of scattering functionalities, everything is wrapped into a single class with all the
-necessary functionalities.
+## What?
+- Pythonic approach to load, modify, run and save Jupyter Notebooks in Python code
+- This enables to quickly and easily create:
+    - Parametrized notebooks
+    - Version controlable notebooks directly from inserted code snippets, Python files or even straight from Python functions and classes.
+    - Notebooks with code generated markdown
+
+## Installation
+
+- Pip install from pip
+```shell
+pip install jubox
+```
+
+- Clone the source code and pip install:
+```shell
+git clone https://github.com/Miksus/jubox.git
+cd jubox
+pip install -e .
+```
 
 ## Example
 
@@ -56,19 +70,6 @@ param_cells[0].overwrite(new_cell, inplace=True)
 
 ```
 
-## Installation
-
-- Pip install from pip
-```shell
-pip install jubox
-```
-
-- Clone the source code and pip install:
-```shell
-git clone https://github.com/Miksus/jubox.git
-cd jubox
-pip install -e .
-```
 
 ---
 
