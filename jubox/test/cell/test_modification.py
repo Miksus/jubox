@@ -7,6 +7,12 @@ def test_append():
     cell.append(" bar string")
     assert cell.data["source"] == "foo string bar string"
 
+def test_append_another_cell():
+    cell = JupyterCell("foo string")
+    cell.append(JupyterCell(" bar string"))
+    assert cell.data["source"] == "foo string bar string"
+
+
 def test_insert():
     cell = JupyterCell("foo string")
     cell.insert(3, " bar")
