@@ -59,21 +59,28 @@ class JupyterCell(JupyterObject):
     
     def __init__(self, cell=None, *, cell_type=None, **kwargs):
 
-
         if isinstance(cell, str) or cell is None:
             cell_type = cell_type or self.default_cell_type
             args = () if cell is None else (cell,)
             cell = self._new_cell_funcs[cell_type](*args, **self._parse_kwargs(cell_type, **kwargs))
         elif isinstance(cell, nbformat.notebooknode.NotebookNode) or isinstance(cell, JupyterCell):
-            cell_type = cell["cell_type"]
+            cell_type = cell_type if cell_type is not None else cell["cell_type"]
             kwds = self._parse_kwargs(cell_type, **kwargs)
             cell["metadata"].update(kwds.get("metadata", {}))
             if cell_type == "code":
                 cell["execution_count"] = kwds.get("execution_count", cell["execution_count"])
                 cell["outputs"] = kwds.get("outputs", cell["outputs"])
+            else:
+                cell.pop("execution_count", None)
+                cell.pop("outputs", None)
+            cell["cell_type"] = cell_type 
         else:
             raise TypeError(f"Unknown cell conversion for type {type(cell)}")
         self.data = cell
+
+    def __delete__(self):
+        "Delete cell"
+        del self.data
 
     def __call__(self, *args, timeout=None, metadata=None, inplace=False, **kwargs):
         "Run the cell"
@@ -168,11 +175,21 @@ class JupyterCell(JupyterObject):
 
     def append(self, value:str):
         "Append string to the cell"
+        value = (
+            value["source"] 
+            if isinstance(value, (JupyterCell, nbformat.notebooknode.NotebookNode))
+            else str(value)
+        )
         src = self["source"]
         self["source"] = src + value
 
     def insert(self, index:int, value:str):
         "Insert string to the cell"
+        value = (
+            value["source"] 
+            if isinstance(value, (JupyterCell, nbformat.notebooknode.NotebookNode))
+            else str(value)
+        )
         src = self["source"]
         self["source"] = src[:index] + value + src[index:]
 
@@ -339,18 +356,45 @@ class JupyterCell(JupyterObject):
     def is_type(self, *output_types):
         return self["output_type"] in output_types
 
-    def has_output(self):
-        return bool(self.get("outputs", False))
 
-# Utils
+
+# Additional properties
+    @property
+    def has_output(self):
+        return bool(self.data.get("outputs", False))
+
+#   Code cells
+    @property
+    def has_error(self):
+        "Whether cell has error in output"
+        outputs = self.data.get("outputs", [])
+        return any(
+            output["output_type"] == "error"
+            for output in outputs
+        )
+
+    @property
+    def has_execute_result(self):
+        "Whether cell has execution result (returned variable)"
+        return any(
+            output["output_type"] == "execute_result"
+            for output in outputs
+        )
+
+# Util methods
     @staticmethod
     def _parse_kwargs(cell_type, outputs=None, execution_count=None, metadata=None, **kwargs):
         
         metadata = {} if metadata is None else metadata
         metadata.update(kwargs)
         if cell_type == "code":
-            outputs = [] if outputs is None else outputs
-            return {"outputs": outputs, "execution_count": execution_count, "metadata": metadata}
+            kwds = {}
+            if outputs is not None:
+                kwds["outputs"] = outputs
+            if execution_count is not None:
+                kwds["execution_count"] = execution_count
+            kwds["metadata"] = metadata
+            return kwds
         else:
             if outputs is not None:
                 metadata.update({"outputs": outputs})
