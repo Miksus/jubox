@@ -119,6 +119,7 @@ class JupyterNotebook(JupyterObject):
             self.node.cells[item] = values
 
     def __delitem__(self, item):
+        ""
         del self.node.cells[item]
 
 # IO
@@ -192,18 +193,6 @@ class JupyterNotebook(JupyterObject):
         nbformat.validate(val)
         self._node = val
 
-
-    @property
-    def cells(self):
-        """Get cells of the notebook"""
-        return JupyterCell.from_list(self.node.cells)
-
-    @cells.setter
-    def cells(self, val):
-        "Set cells in the nbformat.notebooknode.NotebookNode "
-        val = [item.to_dict() if isinstance(item, JupyterCell) else item for item in val]
-        self.node.cells = val
-
     @property
     def metadata(self):
         """Get the metadata of 
@@ -215,6 +204,17 @@ class JupyterNotebook(JupyterObject):
         """Set the metadata of 
         nbformat.notebooknode.NotebookNode"""
         self.node["metadata"] = value
+
+    @property
+    def cells(self):
+        """Get cells of the notebook"""
+        return JupyterCell.from_list(self.node.cells)
+
+    @cells.setter
+    def cells(self, val):
+        "Set cells in the nbformat.notebooknode.NotebookNode "
+        val = [item.to_dict() if isinstance(item, JupyterCell) else item for item in val]
+        self.node.cells = val
 
 # Class methods
     @classmethod
@@ -276,8 +276,8 @@ class JupyterNotebook(JupyterObject):
         "Validate the format of nbformat.notebooknode.NotebookNode"
         nbformat.validate(self.node)
 
-#   Fetch
-    def get_cells(self, cell_type=None, source=None, source_regex=None, tags=None, not_tags=None):
+# Fetch
+    def get_cells(self, cell_type=None, source=None, source_regex=None, tags=None, not_tags=None, has_output_type=None):
         "Get cells matching given parameters (return nbformat.notebooknode.NotebookNode.cell)"
         return [
             cell for cell in self.cells 
@@ -285,6 +285,7 @@ class JupyterNotebook(JupyterObject):
             and cell_is_type(cell, cell_type=cell_type)
             and cell_is_source(cell, source=source)
             and cell_match_source(cell, regex=source_regex)
+            and cell_has_output(cell, output_type=has_output_type)
         ]
 
     def get_cell_outputs(self, **kwargs):
@@ -304,6 +305,15 @@ class JupyterNotebook(JupyterObject):
             self.cells = cells
         else:
             return JupyterNotebook.from_cells(cells)
+
+# Additional properties
+    @property
+    def error_cells(self):
+        # TODO: Test
+        return [
+            cell for cell in self
+            if cell.has_error
+        ]
 
 # TODO: Move the following logic under JupyterCell
 def cell_has_tags(cell, tags=None, not_tags=None):
@@ -339,3 +349,15 @@ def cell_match_source(cell, regex=None):
         return True
         
     return re.match(regex, cell["source"])
+
+def cell_has_output(cell, output_type):
+    if output_type is None:
+        return True
+    output_types = [output_type] if isinstance(output_type, str) else output_type
+
+    cell_outputs = cell.get("outputs", [])
+    if not cell_outputs:
+        return False
+    return any(
+        output["output_type"] in output_types for output in cell_outputs
+    )
