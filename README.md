@@ -9,7 +9,7 @@
 
 ---
 
-![Example](docs/img/example.png "Rain Simulation")
+![Example](docs/img/example.png "Jubox image")
 
 ## What?
 - Pythonic approach to load, modify, run and save Jupyter Notebooks in Python code
@@ -34,8 +34,10 @@ pip install -e .
 
 ## Example
 
+See [demo](docs/Demo.ipynb) or [cook book](docs/cookbook/README.md) for detailed examples. 
+
 ```python
-from jubox import JupyterNotebook, JupyterCell
+from jubox import JupyterNotebook, CodeCell
 
 # Load jupyter Notebook
 nb = JupyterNotebook("my_file.ipynb")
@@ -54,19 +56,13 @@ nb.save()
 # or to new file
 nb.to_ipynb("run_notebook.ipynb")
 
-# or to HTML
-nb.to_html("run_notebook.html")
-
-# or to Python file
-nb.to_python("notebook_code.py")
-
 
 # Get cells with specific tags
 param_cells = nb.get_cells(tags=["parametrized"])
 
 # Rewrite the first tagged cell with dict of parameters
-new_cell = JupyterCell.from_variable_dict(run_date="2020-01-01", category="blue")
-param_cells[0].overwrite(new_cell, inplace=True)
+new_cell = CodeCell.from_variable_dict(run_date="2020-01-01", category="blue")
+param_cells[0].overwrite(new_cell)
 
 ```
 
@@ -79,7 +75,11 @@ param_cells[0].overwrite(new_cell, inplace=True)
 - Render Jupyter Notebooks in a Jupyter Notebook!
 
 ## Test
-Pytest was chosen as testing suites. Tests are found in test directory. 
+Pytest was chosen as testing suites. Tests are found in test directory inside the source. 
+
+## Test
+Pytest was chosen as testing suites. Tests are found in test directory inside the source. 
+
 
 ---
 
@@ -89,7 +89,5 @@ Pytest was chosen as testing suites. Tests are found in test directory.
 
 ---
 ## License
-
-[![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://badges.mit-license.org)
 
 - **[MIT license](http://opensource.org/licenses/mit-license.php)**
