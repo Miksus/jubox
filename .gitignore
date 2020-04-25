@@ -35,3 +35,7 @@ dist/
 
 # Prototyping files & manual testing
 proto/
+
+# Cook Book files
+docs/cookbook/results/*
+!docs/cookbook/results/dummy.md

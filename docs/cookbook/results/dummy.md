@@ -1,0 +1,1 @@
+This folder is intentionally empty. Cook book result files are dumped here.
