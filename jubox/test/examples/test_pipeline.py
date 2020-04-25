@@ -10,6 +10,12 @@ from nbformat.notebooknode import NotebookNode
 from nbconvert.preprocessors import CellExecutionError
 
 def test_pipeline_generated():
+
+    try:
+        import pandas as pd
+    except ModuleNotFoundError:
+        pytest.skip("Missing extra test dependency.")
+
     import datetime
     def transform_func(df):
         # start_date and category are globals given in the notebook
