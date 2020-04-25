@@ -8,7 +8,7 @@ setup(
     name="JuBox",
     version="0.3.0",
     author="Mikael Koli",
-    author_email="koli.mikael@op.fi",
+    author_email="koli.mikael@gmail.com",
     packages=find_packages(),
     description="Object oriented interface to Jupyter Notebook",
     long_description=long_description,
