@@ -12,7 +12,7 @@ def get_test_id(tpl):
     return tpl.__name__
 
 @pytest.mark.parametrize("cls,", test_classes, ids=get_test_id)
-def test_append(cls, *args):
+def test_merge(cls, *args):
     cell = cls("foo string")
     cell.append(" bar string")
     assert cell._node["source"] == "foo string bar string"

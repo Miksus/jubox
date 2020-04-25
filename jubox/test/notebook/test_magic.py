@@ -2,7 +2,7 @@
 
 import pytest
 
-from jubox import JupyterNotebook, JupyterCell
+from jubox import JupyterNotebook, JupyterCell, RawCell
 from nbformat.notebooknode import NotebookNode
 
 from nbformat.v4 import new_code_cell
@@ -10,9 +10,9 @@ from nbformat.v4 import new_code_cell
 def test_iter():
     
     nb = JupyterNotebook([
-        JupyterCell("1 cell"),
-        JupyterCell("2 cell"),
-        JupyterCell("3 cell"),
+        RawCell("1 cell"),
+        RawCell("2 cell"),
+        RawCell("3 cell"),
     ])
 
     for i, cell in enumerate(nb):

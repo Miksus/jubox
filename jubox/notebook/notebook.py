@@ -15,8 +15,8 @@ from nbconvert import preprocessors
 
 from pathlib import Path
 
-from .cell import JupyterCell
-from .base import JupyterObject
+from jubox.cell import JupyterCell
+from jubox.base import JupyterObject
 
 logger = logging.getLogger(__name__)
 
@@ -64,10 +64,10 @@ class JupyterNotebook(JupyterObject):
         elif notebook is None:
             # Creating empty notebook
             logger.debug("Initiating empty notebook")
-            self.node = new_notebook()
+            self.node = self._get_nb_format().new_notebook()
         elif isinstance(notebook, (list, tuple)):
             logger.debug("Initiating notebook from cells")
-            self.node = new_notebook()
+            self.node = self._get_nb_format().new_notebook()
             self.cells = notebook
         else:
             logger.debug("Initiating notebook from file")
@@ -112,14 +112,14 @@ class JupyterNotebook(JupyterObject):
         "Set cells in the notebook"
         if not isinstance(item, slice):
             # Overwrite the cell
-            val = val.to_dict() if isinstance(val, JupyterCell) else val
+            val = val._node if isinstance(val, JupyterCell) else val
             self.node.cells[item] = val
         else:
-            values = [elem.to_dict() if isinstance(elem, JupyterCell) else elem for elem in val]
+            values = [elem._node if isinstance(elem, JupyterCell) else elem for elem in val]
             self.node.cells[item] = values
 
     def __delitem__(self, item):
-        ""
+        "Delete a cell"
         del self.node.cells[item]
 
 # IO
@@ -208,12 +208,12 @@ class JupyterNotebook(JupyterObject):
     @property
     def cells(self):
         """Get cells of the notebook"""
-        return JupyterCell.from_list(self.node.cells)
+        return JupyterCell.from_list_of_nodes(self.node.cells)
 
     @cells.setter
     def cells(self, val):
         "Set cells in the nbformat.notebooknode.NotebookNode "
-        val = [item.to_dict() if isinstance(item, JupyterCell) else item for item in val]
+        val = [item._node if isinstance(item, JupyterCell) else item for item in val]
         self.node.cells = val
 
 # Class methods
@@ -263,12 +263,12 @@ class JupyterNotebook(JupyterObject):
 
     def append(self, cell):
         "Append cell to the notebook"
-        cell = cell.data if isinstance(cell, JupyterCell) else cell
+        cell = cell._node if isinstance(cell, JupyterCell) else cell
         self.node.cells.append(cell)
 
     def insert(self, index, cell):
         "Append cell to the notebook"
-        cell = cell.data if isinstance(cell, JupyterCell) else cell
+        cell = cell._node if isinstance(cell, JupyterCell) else cell
         self.node.cells.insert(index, cell)
 
 # Validation
@@ -308,12 +308,37 @@ class JupyterNotebook(JupyterObject):
 
 # Additional properties
     @property
-    def error_cells(self):
+    def code_cells(self):
         # TODO: Test
         return [
             cell for cell in self
+            if cell.cell_type == "code"
+        ]
+
+    @property
+    def raw_cells(self):
+        # TODO: Test
+        return [
+            cell for cell in self
+            if cell.cell_type == "raw"
+        ]
+
+    @property
+    def markdown_cells(self):
+        # TODO: Test
+        return [
+            cell for cell in self
+            if cell.cell_type == "markdown"
+        ]
+
+    @property
+    def error_cells(self):
+        # TODO: Test
+        return [
+            cell for cell in self.code_cells
             if cell.has_error
         ]
+        
 
 # TODO: Move the following logic under JupyterCell
 def cell_has_tags(cell, tags=None, not_tags=None):

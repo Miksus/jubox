@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from jubox import JupyterNotebook, JupyterCell
+from jubox import JupyterNotebook, CodeCell
 from nbformat.notebooknode import NotebookNode
 
 def test_creation_from_file(notebook_file_simple):
@@ -27,9 +27,9 @@ def test_creation_empty():
 
 def test_creation_list_of_cells():
     nb = JupyterNotebook([
-        JupyterCell("1 cell"),
-        JupyterCell("2 cell"),
-        JupyterCell("3 cell"),
+        CodeCell("1 cell"),
+        CodeCell("2 cell"),
+        CodeCell("3 cell"),
     ])
     assert isinstance(nb.node, NotebookNode)
     assert len(nb.node.cells) == 3
@@ -41,9 +41,9 @@ def test_creation_list_of_cells():
 
 def test_creation_list_of_empty_cells():
     nb = JupyterNotebook([
-        JupyterCell(),
-        JupyterCell(),
-        JupyterCell(),
+        CodeCell(),
+        CodeCell(),
+        CodeCell(),
     ])
     assert isinstance(nb.node, NotebookNode)
     assert len(nb.node.cells) == 3
