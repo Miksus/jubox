@@ -3,14 +3,22 @@ import pytest
 import os
 from pathlib import Path
 
+# Testing utils
+# https://stackoverflow.com/a/33515264
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), 'helpers'))
+
+
+# Fixtures
 @pytest.fixture
 def notebook_folder():
     return str(Path(os.path.dirname(__file__)) / "test_files")
 
-
 @pytest.fixture#(scope="module")
 def notebook_path(tmpdir):
-    #img = compute_expensive_image()
+    # Returns pathlib.Path
+
     path = Path(os.path.dirname(__file__)) / "test_files" / "nb_simple.ipynb"
 
     fh = tmpdir.join("notebook.ipynb")

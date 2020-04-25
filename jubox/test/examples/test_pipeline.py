@@ -7,6 +7,8 @@ import pytest
 from jubox import JupyterNotebook, CodeCell, MarkdownCell
 from nbformat.notebooknode import NotebookNode
 
+from nbconvert.preprocessors import CellExecutionError
+
 def test_pipeline_generated():
     import datetime
     def transform_func(df):
@@ -38,5 +40,19 @@ def test_pipeline_generated():
         CodeCell("""df"""),
         CodeCell("""not_specified_variable"""),
     ])
-    assert 13 == len(nb)
-    assert 13 == len(nb)
+    assert 14 == len(nb)
+
+    with pytest.raises(CellExecutionError):
+        nb(inplace=True)
+
+    err_cell = nb.error_cells[0]
+    html_tb = err_cell.get_output_as_html()
+
+    assert "NameError" in html_tb
+    assert "is not defined" in html_tb
+    assert "Traceback (most recent call last)" in html_tb
+    
+    text_tb = err_cell.get_output_as_html()
+    assert "NameError" in text_tb
+    assert "is not defined" in text_tb
+    assert "Traceback (most recent call last)" in text_tb
