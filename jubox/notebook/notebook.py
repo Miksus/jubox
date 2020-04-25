@@ -311,7 +311,7 @@ class JupyterNotebook(JupyterObject):
             for cell in cells
         ]
 
-    def get_indexes(self, **kwargs):
+    def get_indexes(self, cell_type=None, source=None, source_regex=None, tags=None, not_tags=None, has_output_type=None):
         "Get cell indexes of cells matching given parameters (return nbformat.notebooknode.NotebookNode.cell)"
         # TODO: Test
         return [
