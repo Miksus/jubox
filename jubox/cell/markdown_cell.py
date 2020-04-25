@@ -1,7 +1,8 @@
 
-from nbformat.v4 import (
-    new_markdown_cell, 
-)
+"""
+Representation for Jupyter Notebook's markdown blocks/cells
+"""
+
 
 from jubox.base import JupyterObject
 from .cell import JupyterCell

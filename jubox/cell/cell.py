@@ -1,6 +1,7 @@
 
-# WIP!
-# EXPERIMENTIAL!
+"""
+Base for implementing wrapper for Jupyter Notebook cells
+"""
 
 import re
 import copy
@@ -44,6 +45,7 @@ class CellMeta(type):
             # custom class taking higher priority
             CUSTOM_CELLS.append(cls)
         return cls
+
 
 class JupyterCell(JupyterObject, metaclass=CellMeta):
 

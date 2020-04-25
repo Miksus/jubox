@@ -1,5 +1,10 @@
 
-# https://readthedocs.org/projects/nbformat/downloads/pdf/latest/
+"""
+Representation for Jupyter Notebook's code blocks/cells
+
+See official documents for nbformat structure:
+    https://readthedocs.org/projects/nbformat/downloads/pdf/latest/
+"""
 
 import re
 import os

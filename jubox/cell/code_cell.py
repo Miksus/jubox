@@ -1,4 +1,8 @@
 
+"""
+Representation for Jupyter Notebook's code blocks/cells
+"""
+
 import re
 import copy
 import inspect

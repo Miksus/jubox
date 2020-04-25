@@ -1,7 +1,7 @@
 
-from nbformat.v4 import (
-    new_raw_cell,
-)
+"""
+Representation for Jupyter Notebook's raw blocks/cells
+"""
 
 from jubox.base import JupyterObject
 from .cell import JupyterCell
