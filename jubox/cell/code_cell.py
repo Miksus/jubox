@@ -8,15 +8,6 @@ from jubox.base import JupyterObject
 from .cell import JupyterCell
 
 import nbformat
-from nbformat.v4 import (
-    new_notebook,
-
-    new_code_cell, 
-    new_markdown_cell, 
-    new_raw_cell,
-
-    new_output,
-)
 
 from nbconvert.filters import (
     wrap_text, ansi2html, html2text,
@@ -30,11 +21,15 @@ logger = logging.getLogger(__name__)
 
 class CodeCell(JupyterCell):
 
+    """
+    Code cell in JupyterNotebook
+    """
+
     cell_type = "code"
 
-    @staticmethod
-    def new_node(*args, **kwargs):
-        module = JupyterObject._get_nb_format()
+    @classmethod
+    def new_node(cls, *args, **kwargs):
+        module = cls._get_nb_format()
         return module.new_code_cell(*args, **kwargs)
 
     def set_node_attrs(self, outputs=None, execution_count=None, **kwargs):
@@ -53,7 +48,7 @@ class CodeCell(JupyterCell):
     @classmethod
     def from_source_code(cls, string, **kwargs):
         "Create code cell from string of source code"
-        cell = new_code_cell(string)
+        cell = cls._get_nb_format().new_code_cell(string)
         return cls(cell, **kwargs)
 
     @classmethod

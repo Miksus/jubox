@@ -29,7 +29,7 @@ class JupyterNotebook(JupyterObject):
 
     Class attributes:
     -----------
-        as_version [int] : The version of the node's notebook format, 
+        nb_version [int] : The version of the node's notebook format, 
             see https://nbformat.readthedocs.io/en/latest/
         kernel_name [str] : Kernel to use
             see https://nbformat.readthedocs.io/en/latest/
@@ -88,10 +88,6 @@ class JupyterNotebook(JupyterObject):
         if not inplace:
             return JupyterNotebook.from_node(node)
 
-    def __iter__(self):
-        "Iterate over cells"
-        return iter(self.cells)
-
     def __enter__(self):
         self.load()
         return self
@@ -99,6 +95,7 @@ class JupyterNotebook(JupyterObject):
     def __exit__(self, exception_type, exception_value, traceback):
         self.save()
 
+# Items
     def __getitem__(self, i):
         "Index cells in the notebook"
         cells = self.cells[i]
@@ -122,11 +119,23 @@ class JupyterNotebook(JupyterObject):
         "Delete a cell"
         del self.node.cells[item]
 
+    def __reversed__(self):
+        node = copy.copy(self.node)
+        node.cells = list(reversed(node.cells))
+        return self.from_node(node)
+
+    def __len__(self):
+        return len(self.node.cells)
+
+    def __iter__(self):
+        "Iterate over cells"
+        return iter(self.cells)
+
 # IO
     def load(self):
         "(Re)load the notebook"
         # NOTE: nbformat.read does not like pathlib.Path
-        self.node = nbformat.read(str(self.file), as_version=self.as_version)
+        self.node = nbformat.read(str(self.file), as_version=self.nb_version)
 
     def save(self):
         "Save the notebook to original path"
@@ -154,7 +163,7 @@ class JupyterNotebook(JupyterObject):
         
     def to_ipynb(self, file, **kwargs):
         "Put the notebook to a Jupyter Notebook file"
-        nbformat.write(self.node, file, **kwargs)
+        nbformat.write(self.node, str(file), **kwargs)
 
 #   Generic IO
     def to_file(self, file, *, exporter):
@@ -220,7 +229,7 @@ class JupyterNotebook(JupyterObject):
     @classmethod
     def from_string(cls, string):
         "Construct notebook from string"
-        node = nbformat.reads(string, as_version=cls.as_version)
+        node = nbformat.reads(string, as_version=cls.nb_version)
         return cls(node)
 
     @classmethod
@@ -267,7 +276,7 @@ class JupyterNotebook(JupyterObject):
         self.node.cells.append(cell)
 
     def insert(self, index, cell):
-        "Append cell to the notebook"
+        "Insert cell to the notebook"
         cell = cell._node if isinstance(cell, JupyterCell) else cell
         self.node.cells.insert(index, cell)
 
@@ -276,7 +285,7 @@ class JupyterNotebook(JupyterObject):
         "Validate the format of nbformat.notebooknode.NotebookNode"
         nbformat.validate(self.node)
 
-# Fetch
+# Cell fetch
     def get_cells(self, cell_type=None, source=None, source_regex=None, tags=None, not_tags=None, has_output_type=None):
         "Get cells matching given parameters (return nbformat.notebooknode.NotebookNode.cell)"
         return [
@@ -290,11 +299,23 @@ class JupyterNotebook(JupyterObject):
 
     def get_cell_outputs(self, **kwargs):
         "Get cell outputs matching given parameters (return nbformat.notebooknode.NotebookNode.cell)"
-        raise NotImplementedError
+        # TODO: Test
         cells = self.get_cells(cell_type="code", **kwargs)
         return [
             format_output(cell.outputs)
             for cell in cells
+        ]
+
+    def get_indexes(self, **kwargs):
+        "Get cell indexes of cells matching given parameters (return nbformat.notebooknode.NotebookNode.cell)"
+        # TODO: Test
+        return [
+            i for i, cell in enumerate(self.cells) 
+            if  cell_has_tags(cell, tags=tags, not_tags=not_tags) 
+            and cell_is_type(cell, cell_type=cell_type)
+            and cell_is_source(cell, source=source)
+            and cell_match_source(cell, regex=source_regex)
+            and cell_has_output(cell, output_type=has_output_type)
         ]
 
     def get(self, inplace=False, **kwargs):
@@ -336,7 +357,8 @@ class JupyterNotebook(JupyterObject):
         # TODO: Test
         return [
             cell for cell in self.code_cells
-            if cell.has_error
+            if cell.cell_type == "code" 
+            and cell.has_error
         ]
         
 

@@ -6,19 +6,11 @@ import re
 import copy
 import inspect
 import logging
+from abc import ABC, abstractmethod, ABCMeta
 
 from jubox.base import JupyterObject
 
 import nbformat
-from nbformat.v4 import (
-    new_notebook,
-
-    new_code_cell, 
-    new_markdown_cell, 
-    new_raw_cell,
-
-    new_output,
-)
 
 from nbconvert.filters import (
     wrap_text, ansi2html, html2text,
@@ -56,15 +48,34 @@ class CellMeta(type):
 class JupyterCell(JupyterObject, metaclass=CellMeta):
 
     """Humane API for Jupyter Notebook Cells
+    Don't use this class directly and rather 
+    use its subclasses CodeCell, MarkdownCell
+    and RawCell.
 
     This class is a wrapper, compositor or view
     for nbformat.notebooknode.NotebookNode
     when NotebookNode points to cell data,
     ie. nbformat.v4.new_notebook().cells[0]
 
-    Only data attribute is stored and all
+    Only _node attribute is stored and all
     other should be put to the acutal data
-    of the cell
+    of the cell (_node).
+
+    Properties:
+    -----------
+        node [nbformat.notebooknode.NotebookNode] : Copy of
+            notebook data 
+            NOTE: This is copy of the actual node. This is 
+            read only property as otherwise the consistency
+            between JupyterCell.node["cell_type"] and the 
+            type of the Jubox cell (CodeCell, RawCell etc.) 
+            cannot be maintained.
+
+    Attributes:
+    -----------
+        _node [nbformat.notebooknode.NotebookNode] : Actual
+            notebook node. Modifications are safe except
+            modifying the attribute "cell_type".
     """
 
     new_node_func = None
@@ -88,6 +99,10 @@ class JupyterCell(JupyterObject, metaclass=CellMeta):
         self._node = node
         self.set_node_attrs(**kwargs)
         self.validate()
+
+    @abstractmethod
+    def new_node(self, cell):
+        "Create new nbformat.notebooknode.NotebookNode from the inputted cell"
 
     def validate(self):
         assert self.cell_type == self._node["cell_type"]
@@ -151,11 +166,11 @@ class JupyterCell(JupyterObject, metaclass=CellMeta):
 # Conversions
     def to_notebook(self):
         "nbformat.notebooknode.NotebookNode (Notebook level) representation of the cell"
-        import jubox.notebook
+        from jubox.notebook import notebook
         nb = notebook.JupyterNotebook([self])
         return nb
 
-    def overwrite(self, value, inplace=False):
+    def overwrite(self, value, inplace=True):
         cell = copy.deepcopy(self) if not inplace else self
         if isinstance(value, JupyterCell):
             value = value._node.source
@@ -164,7 +179,7 @@ class JupyterCell(JupyterObject, metaclass=CellMeta):
             return cell
 
     def append(self, value:str):
-        "Append string to the cell"
+        "Append string to the cell source"
         value = (
             value["source"] 
             if isinstance(value, (JupyterCell, nbformat.notebooknode.NotebookNode))
@@ -174,7 +189,7 @@ class JupyterCell(JupyterObject, metaclass=CellMeta):
         self["source"] = src + value
 
     def insert(self, index:int, value:str):
-        "Insert string to the cell"
+        "Insert string to the cell source"
         value = (
             value["source"] 
             if isinstance(value, (JupyterCell, nbformat.notebooknode.NotebookNode))
@@ -185,7 +200,7 @@ class JupyterCell(JupyterObject, metaclass=CellMeta):
 
 # Representation
     def __repr__(self):
-        return repr(self._node)
+        return f"{type(self).__name__}{repr(self._node)}"
 
     def __str__(self):
         width = 200
@@ -268,15 +283,18 @@ class JupyterCell(JupyterObject, metaclass=CellMeta):
 #        "Fakes nbformat.notebooknode.NotebookNode behaviour"
 #        return getattr(self._node, name)
 #
-#    def __setattr__(self, attr, val):
-#        """Fakes nbformat.notebooknode.NotebookNode behaviour
-#        JupyterCell can only store data attribute. All other
-#        attributes should be class attributes or be put to 
-#        the data. This is only a convenient view to the cells"""
-#        if attr != "data":
-#            setattr(self._node, attr, val)
+    def __setattr__(self, attr, val):
+        """Fakes nbformat.notebooknode.NotebookNode behaviour
+        JupyterCell can only store data attribute. All other
+        attributes should be class attributes or be put to 
+        the data. This is only a convenient view to the cells"""
+        if attr != "_node":
+            setattr(self._node, attr, val)
+        else:
+            self.__dict__[attr] = val
 
 # Boolean functions
+# TODO: use these instead of functions in JupyterNotebook.get
     def has_tags(self, tags=None, not_tags=None):
 
         cell_tags = self["metadata"].get("tags", [])

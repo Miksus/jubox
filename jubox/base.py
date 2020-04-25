@@ -3,7 +3,10 @@
 import nbformat
 
 class JupyterObject:
-    as_version = 4
+    """
+    Base class for Jubox classes
+    """
+
     nb_version = 4
     kernel_name = "python3"
 
