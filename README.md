@@ -77,9 +77,6 @@ param_cells[0].overwrite(new_cell)
 ## Test
 Pytest was chosen as testing suites. Tests are found in test directory inside the source. 
 
-## Test
-Pytest was chosen as testing suites. Tests are found in test directory inside the source. 
-
 
 ---
 
