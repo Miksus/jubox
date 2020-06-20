@@ -5,8 +5,10 @@ Representation for Jupyter Notebook's code blocks/cells
 
 import re
 import copy
+import types
 import inspect
 import logging
+from keyword import iskeyword
 
 from jubox.base import JupyterObject
 from .cell import JupyterCell
@@ -62,17 +64,84 @@ class CodeCell(JupyterCell):
         return cls.from_source_code(source)
 
     @classmethod
-    def from_variable_dict(cls, var_dict=None, *, outputs=None, **kwargs):
+    def from_variable_dict(cls, var_dict=None, *, outputs=None, include_imports=False, **kwargs):
         """Create code cell from dictionary of variables. Useful for 
-        creating parameter cells"""
+        creating parameter cells
+
+        Arguments:
+        ----------
+            var_dict [Dict[str, Any]] : Dictionary of variables to parametrize
+            outputs : Outputs to the cell, optional
+            include_imports [bool] : Whether to determine and include the import statements to the cell
+            **kwargs [Dict[str, Any]] : Updates var_dict
+        
+        Examples:
+        ---------
+            cell = CodeCell.from_variable_dict(
+                a_string="2020-03-03",
+                an_int=4,
+                a_float=5.5,
+                date=datetime.datetime(2020, 5, 10),
+                ordered_dict=OrderedDict([("a", 2), ("b", 5)]),
+
+                # Include the imports to the cell
+                include_imports=True
+            )
+            cell.source
+            >>>
+                import datetime
+                from collections import OrderedDict
+
+                a_string = '2020-03-03'
+                an_int = 4
+                a_float = 5.5
+                date = datetime.datetime(2020, 5, 10, 0, 0)
+                ordered_dict = OrderedDict([('a', 2), ('b', 5)])
+        """
+
         var_dict = {} if var_dict is None else var_dict
         var_dict.update(kwargs)
+
+        regex_valid_init = r"([a-zA-Z0-9_]+[.])?[a-zA-Z0-9_]+\(.*\)" 
+        # Regex allows: MyClass(x=5.5), datetime.datetime(year=2020, month=2, day=5), Counter()
+
+        snippets = []
+        imports = []
+        for var, val in var_dict.items():
+            repr_string = repr(val)
+            module = type(val).__module__
+            classname = type(val).__name__
+
+            # Validation
+            is_invalid_init = module != "builtins" and not bool(re.match(regex_valid_init, repr_string))
+            is_invalid_varname = not var.isidentifier() or iskeyword(var)
+            if is_invalid_init:
+                raise ValueError(f"Variable's '{var}' repr does not produce valid initiation string: {repr_string}")
+            elif is_invalid_varname:
+                raise KeyError(f"Invalid variable name: {var}")
+
+            # Variable declaration
+            if isinstance(val, types.BuiltinFunctionType):
+                repr_string = val.__name__ # Built in functions have odd repr, like sum: '<built-in function sum>'
+            snippets.append(f"{var} = {repr_string}")
+
+            # Import statement
+            if include_imports and module != "builtins":
+
+                has_module_in_repr = bool(re.match("[a-zA-Z0-9_]+[.].+", repr_string)) # For example datetime.datetime
+                if has_module_in_repr:
+                    # For example: repr(datetime.datetime.now()) --> "datetime.datetime(...)"
+                    import_code = f"import {module}"
+                else:
+                    # For example: repr(datetime.datetime.now()) --> "datetime.datetime(...)"
+                    import_code = f"from {module} import {classname}"
+                imports.append(import_code)
         
-        snippets = [
-            f"{key} = {repr(val)}" 
-            for key, val in var_dict.items()
-        ]
+        # Form the source code
         code = '\n'.join(snippets)
+        if include_imports:
+            code = '\n'.join(imports) + "\n\n" + code
+
         return cls.from_source_code(code, outputs=outputs)
 
 # Fetch
