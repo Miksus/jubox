@@ -66,6 +66,10 @@ class JupyterNotebook(JupyterObject):
         if isinstance(notebook, nbformat.notebooknode.NotebookNode):
             logger.debug("Initiating notebook from nbformat.notebooknode.NotebookNode")
             self.node = notebook
+        elif isinstance(notebook, JupyterNotebook):
+            self.node = notebook.node
+            if hasattr(notebook, "file"):
+                self.file = notebook.file
         elif notebook is None:
             # Creating empty notebook
             logger.debug("Initiating empty notebook")
