@@ -49,3 +49,17 @@ def test_creation_list_of_empty_cells():
     assert len(nb.node.cells) == 3
     assert isinstance(nb.node.cells[0], NotebookNode)
 
+def test_creation_another_notebook():
+    nb_orig = JupyterNotebook([
+        CodeCell("1 cell"),
+        CodeCell("2 cell"),
+        CodeCell("3 cell"),
+    ])
+
+    nb = JupyterNotebook(nb_orig)
+
+    assert isinstance(nb.node, NotebookNode)
+    assert len(nb.node.cells) == 3
+    assert isinstance(nb.node.cells[0], NotebookNode)
+
+    assert nb.node is nb_orig.node
