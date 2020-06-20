@@ -7,6 +7,7 @@ import re
 import copy
 import inspect
 import logging
+from typing import Union
 from abc import ABC, abstractmethod, ABCMeta
 
 from jubox.base import JupyterObject
@@ -172,7 +173,12 @@ class JupyterCell(JupyterObject, metaclass=CellMeta):
         nb = notebook.JupyterNotebook([self])
         return nb
 
-    def overwrite(self, value, inplace=True):
+    def overwrite(self, value: Union[str, 'JupyterCell'], inplace=True):
+        "Overwrite the source of the cell using value"
+
+        if isinstance(value, JupyterObject) and type(self) != type(value):
+            raise TypeError("Value must be same cell type")
+
         cell = copy.deepcopy(self) if not inplace else self
         if isinstance(value, JupyterCell):
             value = value._node.source
@@ -180,8 +186,11 @@ class JupyterCell(JupyterObject, metaclass=CellMeta):
         if not inplace:
             return cell
 
-    def append(self, value:str):
+    def append(self, value: Union[str, 'JupyterCell']):
         "Append string to the cell source"
+        if isinstance(value, JupyterObject) and type(self) != type(value):
+            raise TypeError("Value must be same cell type")
+
         value = (
             value["source"] 
             if isinstance(value, (JupyterCell, nbformat.notebooknode.NotebookNode))
@@ -190,8 +199,12 @@ class JupyterCell(JupyterObject, metaclass=CellMeta):
         src = self["source"]
         self["source"] = src + value
 
-    def insert(self, index:int, value:str):
-        "Insert string to the cell source"
+    def insert(self, index:int, value: Union[str, 'JupyterCell']):
+        "Insert to the cell source using value"
+
+        if isinstance(value, JupyterObject) and type(self) != type(value):
+            raise TypeError("Value must be same cell type")
+
         value = (
             value["source"] 
             if isinstance(value, (JupyterCell, nbformat.notebooknode.NotebookNode))
@@ -202,7 +215,7 @@ class JupyterCell(JupyterObject, metaclass=CellMeta):
 
 # Representation
     def __repr__(self):
-        return f"{type(self).__name__}{repr(self._node)}"
+        return f"{type(self).__name__}({repr(self._node)})"
 
     def __str__(self):
         width = 200
