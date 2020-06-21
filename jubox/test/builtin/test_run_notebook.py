@@ -32,11 +32,11 @@ def test_run_error(notebook_file_with_error, capsys):
     assert captured.out == "Notebook failed\nNotebook finished\n"
     assert extra["ename"] == "NameError"
     assert extra["evalue"] == "name 'un_specified_variable' is not defined"
-    # Taking off the ipython version/serializaiton/whatever
-    assert extra["traceback"].startswith("\x1b[1;31m---------------------------------------------------------------------------\x1b[0m\n\x1b[1;31mNameError")
-    assert extra["traceback"].endswith("----> 1\x1b[1;33m \x1b[0mun_specified_variable\x1b[0m\x1b[1;33m\x1b[0m\x1b[0m\n\x1b[0m\n\x1b[1;31mNameError\x1b[0m: name 'un_specified_variable' is not defined")
-    
-    
+
+    # Testing traceback
+    assert 'Traceback (most recent call last)' in extra["traceback"]
+    assert "\n\x1b[1;31mNameError\x1b[0m: name 'un_specified_variable' is not defined" in extra["traceback"]
+
 def test_run_success(notebook_file_task, capsys):
 
     run_notebook(
