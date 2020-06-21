@@ -35,7 +35,7 @@ def test_run_error(notebook_file_with_error, capsys):
 
     # Testing traceback
     assert 'Traceback (most recent call last)' in extra["traceback"]
-    assert "\n\x1b[1;31mNameError\x1b[0m: name 'un_specified_variable' is not defined" in extra["traceback"]
+    assert "mNameError\x1b[0m: name 'un_specified_variable' is not defined" in extra["traceback"]
 
 def test_run_success(notebook_file_task, capsys):
 
