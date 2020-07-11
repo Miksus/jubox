@@ -41,6 +41,8 @@ def run_notebook(notebook,
                 silence=False,
                 clear_outputs=True,
                 parameter_tag="parameters",
+                ignore_cells=None,
+                kwds_run=None,
                 **kwargs):
     """Convenient function to execute a notebook
 
@@ -79,6 +81,9 @@ def run_notebook(notebook,
         clear_outputs {bool} : Whether to clear the outputs from the cells before execution.
         parameter_tag {str} : Cell tag for the parameters
 
+        ignore_cells {Dict[str, Any]} : Dict for identifying cells to ignore for execution. See jubox.utils.cells_match
+        kwds_run {Dict} : Keyword arguments 
+
         kwargs {dict} : Additional keyword arguments passed to on_failure, on_success & 
                             on_finally
     Returns:
@@ -93,8 +98,11 @@ def run_notebook(notebook,
     if clear_outputs:
         notebook.clear_outputs(inplace=False)
 
+    kwds_run = {} if kwds_run is None else kwds_run
+
+    status = None
     try:
-        notebook(inplace=True)
+        notebook(inplace=True, ignore=ignore_cells, **kwds_run)
     except CellExecutionError:
         status = "fail"
 
