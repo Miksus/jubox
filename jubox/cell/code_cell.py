@@ -47,9 +47,13 @@ class CodeCell(JupyterCell):
 
     def __call__(self, *args, **kwargs):
         "Run the cell"
+        # TODO: Use ExecutePreprocessor.preprocess_cell instead
         nb = self.to_notebook()
         return nb(*args, **kwargs)
 
+    def exec(self, *args):
+        "Execute the code in the cell"
+        exec(self.source, *args)
 
     @classmethod
     def from_source_code(cls, string, **kwargs):
