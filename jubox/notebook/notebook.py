@@ -10,7 +10,7 @@ import re
 import os
 import copy
 import logging
-
+import warnings
 
 import nbformat
 
@@ -22,6 +22,7 @@ from pathlib import Path
 
 from jubox.cell import JupyterCell
 from jubox.base import JupyterObject
+from jubox import utils
 
 logger = logging.getLogger(__name__)
 
@@ -83,8 +84,17 @@ class JupyterNotebook(JupyterObject):
             self.file = notebook
 
 # Generic
-    def __call__(self, *args, metadata=None, timeout=None, inplace=False, **kwargs):
+    def __call__(self, *args, metadata=None, timeout=None, inplace=False, ignore=None, **kwargs):
         "Execute the code in the notebook"
+        if ignore is not None:
+            # Should not operate on copy thus running subset
+            # of the notebook will have the outputs for the
+            # full notebook 
+            nb_main = copy.deepcopy(self) if not inplace else self
+            nb_subset = nb_main.drop(inplace=False, **ignore)
+            nb_subset(*args, metadata=metadata, timeout=timeout, inplace=True, ignore=None, **kwargs)
+            return None if inplace else nb_main
+
         node = copy.deepcopy(self.node) if not inplace else self.node
 
         param_metadata = {} if metadata is None else metadata
@@ -108,11 +118,14 @@ class JupyterNotebook(JupyterObject):
     def __getitem__(self, i):
         "Index cells in the notebook"
         cells = self.cells[i]
-        if isinstance(i, slice):
-            # Multiple cells --> a sub Jupyter Notebook
-            return JupyterNotebook.from_cells(cells)
-        else:
+        is_single_cell_index = not isinstance(cells, list)
+        if is_single_cell_index:
+            # Return one cell
+            # Called like: self.cells[0]
             return cells
+        else:
+            return JupyterNotebook.from_cells(cells)
+
 
     def __setitem__(self, item, val):
         "Set cells in the notebook"
@@ -126,15 +139,13 @@ class JupyterNotebook(JupyterObject):
 
     def __delitem__(self, item):
         "Delete a cell"
-        del self.node.cells[item]
+        del self.cells[item]
 
     def __reversed__(self):
-        node = copy.copy(self.node)
-        node.cells = list(reversed(node.cells))
-        return self.from_node(node)
+        return reversed(self.cells)
 
     def __len__(self):
-        return len(self.node.cells)
+        return len(self.cells)
 
     def __iter__(self):
         "Iterate over cells"
@@ -223,17 +234,6 @@ class JupyterNotebook(JupyterObject):
         nbformat.notebooknode.NotebookNode"""
         self.node["metadata"] = value
 
-    @property
-    def cells(self):
-        """Get cells of the notebook"""
-        return JupyterCell.from_list_of_nodes(self.node.cells)
-
-    @cells.setter
-    def cells(self, val):
-        "Set cells in the nbformat.notebooknode.NotebookNode "
-        val = [item._node if isinstance(item, JupyterCell) else item for item in val]
-        self.node.cells = val
-
 # Class methods
     @classmethod
     def from_string(cls, string):
@@ -245,7 +245,7 @@ class JupyterNotebook(JupyterObject):
     def from_cells(cls, cells):
         "Construct notebook from list of cells (cells: nbformat.notebooknode.NotebookNode.cell)"
         obj = cls(None)
-        obj.cells = cells
+        obj.cells = [cells] if not isinstance(cells, list) else cells
         return obj
 
     @classmethod
@@ -295,42 +295,33 @@ class JupyterNotebook(JupyterObject):
         nbformat.validate(self.node)
 
 # Cell fetch
-    def get_cells(self, cell_type=None, source=None, source_regex=None, tags=None, not_tags=None, has_output_type=None):
+    def get_cells(self, **kwargs):
         "Get cells matching given parameters (return nbformat.notebooknode.NotebookNode.cell)"
+        warnings.warn("Method get_cells is deprecated. Please use JupyterNotebook.cells.get", DeprecationWarning, stacklevel=2)
         return [
             cell for cell in self.cells 
-            if  cell_has_tags(cell, tags=tags, not_tags=not_tags) 
-            and cell_is_type(cell, cell_type=cell_type)
-            and cell_is_source(cell, source=source)
-            and cell_match_source(cell, regex=source_regex)
-            and cell_has_output(cell, output_type=has_output_type)
+            if utils.cell_match(cell, **kwargs) 
         ]
 
-    def get_cell_outputs(self, **kwargs):
-        "Get cell outputs matching given parameters (return nbformat.notebooknode.NotebookNode.cell)"
-        # TODO: Test
-        cells = self.get_cells(cell_type="code", **kwargs)
-        return [
-            format_output(cell.outputs)
-            for cell in cells
-        ]
-
-    def get_indexes(self, cell_type=None, source=None, source_regex=None, tags=None, not_tags=None, has_output_type=None):
+    def get_indexes(self, **kwargs):
         "Get cell indexes of cells matching given parameters (return nbformat.notebooknode.NotebookNode.cell)"
-        # TODO: Test
+        warnings.warn("Method get_indexes will be deprecated", DeprecationWarning, stacklevel=2)
         return [
             i for i, cell in enumerate(self.cells) 
-            if  cell_has_tags(cell, tags=tags, not_tags=not_tags) 
-            and cell_is_type(cell, cell_type=cell_type)
-            and cell_is_source(cell, source=source)
-            and cell_match_source(cell, regex=source_regex)
-            and cell_has_output(cell, output_type=has_output_type)
+            if utils.cell_match(**kwargs)
         ]
 
     def get(self, inplace=False, **kwargs):
         """Get sub JupyterNotebook from cells matching 
         given parameters and returns a new Notebook object"""
-        cells = self.get_cells(**kwargs)
+        cells = self.cells.get(**kwargs)
+        if inplace:
+            self.cells = cells
+        else:
+            return JupyterNotebook.from_cells(cells)
+
+    def drop(self, inplace=False, **kwargs):
+        cells = self.cells.drop(**kwargs)
         if inplace:
             self.cells = cells
         else:
@@ -339,7 +330,7 @@ class JupyterNotebook(JupyterObject):
 # Additional properties
     @property
     def code_cells(self):
-        # TODO: Test
+        warnings.warn("Attribute code_cells is deprecated. Please use JupyterNotebook.cells.code", DeprecationWarning, stacklevel=2)
         return [
             cell for cell in self
             if cell.cell_type == "code"
@@ -347,7 +338,7 @@ class JupyterNotebook(JupyterObject):
 
     @property
     def raw_cells(self):
-        # TODO: Test
+        warnings.warn("Attribute raw_cells is deprecated. Please use JupyterNotebook.cells.raw", DeprecationWarning, stacklevel=2)
         return [
             cell for cell in self
             if cell.cell_type == "raw"
@@ -355,7 +346,7 @@ class JupyterNotebook(JupyterObject):
 
     @property
     def markdown_cells(self):
-        # TODO: Test
+        warnings.warn("Attribute markdown_cells is deprecated. Please use JupyterNotebook.cells.markdown", DeprecationWarning, stacklevel=2)
         return [
             cell for cell in self
             if cell.cell_type == "markdown"
@@ -363,57 +354,10 @@ class JupyterNotebook(JupyterObject):
 
     @property
     def error_cells(self):
-        # TODO: Test
+        warnings.warn("Attribute error_cells is deprecated. Please use JupyterNotebook.cells.errors", DeprecationWarning, stacklevel=2)
         return [
             cell for cell in self.code_cells
             if cell.cell_type == "code" 
             and cell.has_error
         ]
         
-
-# TODO: Move the following logic under JupyterCell
-def cell_has_tags(cell, tags=None, not_tags=None):
-
-    cell_tags = cell["metadata"].get("tags", [])
-
-    isin_allowed_tags = (
-        any(tag in cell_tags for tag in tags) or tags is None
-        if tags is not None else True
-    )
-
-    isin_disallowed_tags = (
-        any(tag in cell_tags for tag in not_tags)
-        if not_tags is not None else False
-    )
-    return isin_allowed_tags and not isin_disallowed_tags
-
-def cell_is_type(cell, cell_type=None):
-    if cell_type is None:
-        return True
-
-    cell_types = [cell_type] if isinstance(cell_type, str) else cell_type
-    return cell["cell_type"] in cell_types
-
-def cell_is_source(cell, source=None):
-    if source is None:
-        return True
-
-    return cell["source"] == source
-
-def cell_match_source(cell, regex=None):
-    if regex is None:
-        return True
-        
-    return re.match(regex, cell["source"])
-
-def cell_has_output(cell, output_type):
-    if output_type is None:
-        return True
-    output_types = [output_type] if isinstance(output_type, str) else output_type
-
-    cell_outputs = cell.get("outputs", [])
-    if not cell_outputs:
-        return False
-    return any(
-        output["output_type"] in output_types for output in cell_outputs
-    )
