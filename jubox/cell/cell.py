@@ -103,17 +103,6 @@ class JupyterCell(JupyterObject, metaclass=CellMeta):
         self.set_node_attrs(**kwargs)
         self.validate()
 
-    def __copy__(self):
-        node = copy.copy(self._node)
-        return type(self)(node)
-
-    def __deepcopy__(self, memo):
-        # https://stackoverflow.com/a/45357443
-        copy = type(self)()
-        memo[id(self)] = copy
-        copy._node = copy.deepcopy(self._node, memo)
-        return copy
-
     @abstractmethod
     def new_node(self, cell):
         "Create new nbformat.notebooknode.NotebookNode from the inputted cell"
