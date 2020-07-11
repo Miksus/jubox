@@ -68,3 +68,31 @@ def test_execute_not_inplace(notebook_file_unrun):
     nb_run = nb(inplace=False)
 
     assert nb_run.node.cells[-1].outputs[0]["data"]["text/plain"] == "'foobar'"
+
+def test_execute_ignore_inplace(notebook_file_task):
+    nb = JupyterNotebook(notebook_file_task)
+    nb.clear_outputs()
+    nb(inplace=True, ignore=dict(tags=["result"]))
+
+    assert len(nb.cells[1].outputs) == 1
+    assert len(nb.cells[-1].outputs) == 0
+    assert len(nb.cells.get(tags=["result"])[-1].outputs) == 0
+
+    with pytest.raises(CellExecutionError):
+        # Should raise exception as some of the variables
+        # are undefined
+        nb(inplace=True, ignore=dict(tags=["parameters"]))
+
+def test_execute_ignore_not_inplace(notebook_file_task):
+    nb = JupyterNotebook(notebook_file_task)
+    nb.clear_outputs()
+    nb_result = nb(inplace=False, ignore=dict(tags=["result"]))
+
+    assert len(nb_result.cells[1].outputs) == 1
+    assert len(nb_result.cells[-1].outputs) == 0
+    assert len(nb_result.cells.get(tags=["result"])[-1].outputs) == 0
+
+    with pytest.raises(CellExecutionError):
+        # Should raise exception as some of the variables
+        # are undefined
+        nb(inplace=False, ignore=dict(tags=["parameters"]))
