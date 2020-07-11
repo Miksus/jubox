@@ -5,7 +5,7 @@ import sys
 import traceback
 
 def _get_cell_exc_info(tb):
-    "Get the actual exception raised in the notebook (instead of the CellExecutionError"
+    "Get the actual exception raised in the notebook (instead of the CellExecutionError)"
     tbs = [tb_next for tb_next in traceback.walk_tb(tb)]
     last_tb = tbs[-1]
     f_locals = last_tb[0].f_locals
