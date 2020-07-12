@@ -186,10 +186,6 @@ class CodeCell(JupyterCell):
         ]
 
 # Additional properties
-    @property
-    def outputs(self):
-        # TODO: Remove when accessors complete
-        return self._node["outputs"]
 
     @property
     def execution_results(self):
