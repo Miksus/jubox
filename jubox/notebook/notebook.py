@@ -255,25 +255,28 @@ class JupyterNotebook(JupyterObject):
 
 # Functionalities
 #   Clearing
-    def clear_outputs(self, **kwargs):
+    def clear_outputs(self, inplace=None, **kwargs):
         "Clear all outputs in the notebook"
         processor = preprocessors.ClearOutputPreprocessor(**kwargs)
-        return self.process_node(processor, **kwargs)
+        return self.process_node(processor, inplace=inplace, **kwargs)
 
-    def clear_metadata(self, **kwargs):
+    def clear_metadata(self, inplace=None, **kwargs):
         "Clear all metadata in the notebook"
         processor = preprocessors.ClearMetadataPreprocessor(**kwargs)
-        return self.process_node(processor, **kwargs)
+        return self.process_node(processor, inplace=inplace, **kwargs)
 
-    def clear_tags(self, **kwargs):
+    def clear_tags(self, inplace=None, **kwargs):
         "Clear all tags in the notebook"
         processor = preprocessors.TagRemovePreprocessor(**kwargs)
-        return self.process_node(processor, **kwargs)
+        return self.process_node(processor, inplace=inplace, **kwargs)
 
-    def process_node(self, preprocessor, inplace=False):
+    def process_node(self, preprocessor, inplace=None):
         """Process the nbformat.notebooknode.NotebookNode
         representation of the notebook with specified
         preprocessor"""
+        # TODO: inplace as decorator
+        if inplace is None:
+            inplace = False
         node = copy.deepcopy(self.node) if not inplace else self.node
         preprocessor.preprocess(node, {})
         if not inplace:
