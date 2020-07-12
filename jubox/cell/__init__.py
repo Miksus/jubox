@@ -1,5 +1,5 @@
-from .code_cell import CodeCell
-from .raw_cell import RawCell
-from .markdown_cell import MarkdownCell
+from .base import JupyterCell
 
-from .cell import JupyterCell
+from .code import CodeCell
+from .raw import RawCell
+from .markdown import MarkdownCell

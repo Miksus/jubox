@@ -4,7 +4,7 @@ Representation for Jupyter Notebook's raw blocks/cells
 """
 
 from jubox.base import JupyterObject
-from .cell import JupyterCell
+from .base import JupyterCell
 
 class RawCell(JupyterCell):
     cell_type = "raw"

@@ -286,7 +286,7 @@ class JupyterCell(JupyterObject, metaclass=CellMeta):
 
     @property
     def metadata(self):
-        return self._node.source
+        return self._node.metadata
 
     @metadata.setter
     def metadata(self, val):

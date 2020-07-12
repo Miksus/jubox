@@ -8,10 +8,12 @@ import copy
 import types
 import inspect
 import logging
+import warnings
 from keyword import iskeyword
 
 from jubox.base import JupyterObject
-from .cell import JupyterCell
+from .base import JupyterCell
+from jubox import utils
 
 import nbformat
 
@@ -159,6 +161,7 @@ class CodeCell(JupyterCell):
 
 # Fetch
     def get_output_as_html(self, **kwargs):
+        warnings.warn("Method get_output_as_html is deprecated. Please use CodeCell.outputs.as_html", DeprecationWarning, stacklevel=2)
         return '<br>'.join([
             convert_to_html_format(output)
             for output in self["outputs"]
@@ -166,6 +169,7 @@ class CodeCell(JupyterCell):
         ])
 
     def get_output_as_text(self, **kwargs):
+        warnings.warn("Method get_output_as_html is deprecated. Please use CodeCell.outputs.as_plain", DeprecationWarning, stacklevel=2)
         return '\n'.join([
             convert_to_text_format(output)
             for output in self["outputs"]
@@ -174,6 +178,7 @@ class CodeCell(JupyterCell):
 
 
     def get_outputs(self, mime_formats=None, output_types=None):
+        warnings.warn("Method get_outputs is deprecated. Please use CodeCell.outputs.get", DeprecationWarning, stacklevel=2)
         return [
             output
             for output in self["outputs"]
@@ -183,10 +188,12 @@ class CodeCell(JupyterCell):
 # Additional properties
     @property
     def outputs(self):
+        # TODO: Remove when accessors complete
         return self._node["outputs"]
 
     @property
     def execution_results(self):
+        warnings.warn("Attribute execution_results is deprecated. Please use CodeCell.outputs.execute_results", DeprecationWarning, stacklevel=2)
         return [
             output for output in self.outputs
             if output["output_type"] == "execute_result"
@@ -194,6 +201,7 @@ class CodeCell(JupyterCell):
 
     @property
     def display_data(self):
+        warnings.warn("Attribute execution_results is deprecated. Please use CodeCell.outputs.display_data", DeprecationWarning, stacklevel=2)
         return [
             output for output in self.outputs
             if output["output_type"] == "display_data"
@@ -201,6 +209,7 @@ class CodeCell(JupyterCell):
 
     @property
     def streams(self):
+        warnings.warn("Attribute execution_results is deprecated. Please use CodeCell.outputs.streams", DeprecationWarning, stacklevel=2)
         return [
             output for output in self.outputs
             if output["output_type"] == "stream"
@@ -213,6 +222,7 @@ class CodeCell(JupyterCell):
     @property
     def has_error(self):
         "Whether cell has error in output"
+        # TODO: Modify when accessors complete
         outputs = self._node.get("outputs", [])
         return any(
             output["output_type"] == "error"
@@ -225,9 +235,13 @@ class CodeCell(JupyterCell):
         return len(self.execution_results) > 0
 
 
-# MIME types: https://www.freeformatter.com/mime-types-list.html
+def register_accessor(name):
+    return utils.register_accessor(CodeCell, name)
 
+
+# TODO: Remove the following functions
 def convert_to_text_format(output):
+    warnings.warn("Function convert_to_text_format is deprecated.", DeprecationWarning, stacklevel=2)
     if output["output_type"] == "stream":
         return output["text"]
 
@@ -250,7 +264,7 @@ def convert_to_text_format(output):
     return text
 
 def convert_to_html_format(output):
-    
+    warnings.warn("Function convert_to_html_format is deprecated.", DeprecationWarning, stacklevel=2)
     if output["output_type"] == "stream":
         html = '<br>'.join(ansi2html(output["text"]))
         
@@ -275,7 +289,7 @@ def convert_to_html_format(output):
 
 
 def output_isin(output, output_types=None, mime_formats=None):
-
+    warnings.warn("Function output_isin is deprecated.", DeprecationWarning, stacklevel=2)
     isin_output_type = output_types is None or output["output_type"] in output_types 
     isin_mime_format = output_types is None or (
         output["output_type"] in ("display_data", "execute_result")
