@@ -47,7 +47,7 @@ nb.load()
 # by making a copy (output is lost if raised exception)
 nb_runned = nb()
 
-# or in place (maintains exceptions in the file)
+# or in place (maintains exceptions in the notebook)
 nb(inplace=True)
 
 
@@ -58,7 +58,7 @@ nb.to_ipynb("run_notebook.ipynb")
 
 
 # Get cells with specific tags
-param_cells = nb.get_cells(tags=["parametrized"])
+param_cells = nb.cells.get(tags=["parametrized"])
 
 # Rewrite the first tagged cell with dict of parameters
 new_cell = CodeCell.from_variable_dict(run_date="2020-01-01", category="blue")
@@ -70,9 +70,12 @@ param_cells[0].overwrite(new_cell)
 ---
 
 ## Features
-- Convenient object oriented API for Jupyter Notebooks. 
-- Load, save and run notebooks and get cells containing 
-- Render Jupyter Notebooks in a Jupyter Notebook!
+- Convenient object oriented API for Jupyter Notebooks.
+- API includes:
+    - Load, save and run notebooks in Python
+    - Conveniently select specific cells using tags, source, regex or the type
+    - Conveniently select specific outputs of a cell and render it to HTML or plain text
+    - Render Jupyter Notebooks in a Jupyter Notebook!
 
 ## Test
 Pytest was chosen as testing suites. Tests are found in test directory inside the source. 
