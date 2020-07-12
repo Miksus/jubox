@@ -44,8 +44,8 @@ def test_plain_text():
     actual = cell.outputs.as_plain()
 
     assert actual.startswith(expected_start)
-    assert 'UserWarning: Bye' in actual
-    assert 'UserWarning: world\n' in actual
+    assert '6: UserWarning: Bye' in actual
+    assert '8: UserWarning: world\n' in actual
     assert actual.endswith(expected_end)
 
 
@@ -83,6 +83,6 @@ def test_html():
     actual = cell.outputs.as_html(use_css=False)
 
     assert actual.startswith(expected_start)
-    assert 'ipykernel_launcher.py:6: UserWarning: Bye<br>' in actual
-    assert 'ipykernel_launcher.py:8: UserWarning: world<br>' in actual
+    assert '6: UserWarning: Bye<br>' in actual
+    assert '8: UserWarning: world<br>' in actual
     assert actual.endswith(expected_end)
