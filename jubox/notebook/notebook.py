@@ -361,3 +361,5 @@ class JupyterNotebook(JupyterObject):
             and cell.has_error
         ]
         
+def register_accessor(name):
+    return utils.register_accessor(JupyterNotebook, name)
