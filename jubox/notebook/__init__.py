@@ -1,3 +1,3 @@
 from .notebook import JupyterNotebook
 
-from . import descriptors 
+from . import accessors 
