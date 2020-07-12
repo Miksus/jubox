@@ -18,3 +18,9 @@ def test_exection_with_error():
         cell(inplace=True)
     assert 1 == len(cell.outputs)
     assert 'NameError' in str(cell.outputs[0])
+
+def test_exec():
+    cell = CodeCell("exec_var = 'foo' + 'bar'")
+    cell_vars = cell.exec()
+    assert 0 == len(cell.outputs)
+    assert 'foobar' == cell_vars["exec_var"]
