@@ -6,7 +6,7 @@ with open("README.md", "r") as f:
 
 setup(
     name="JuBox",
-    version="0.3.0",
+    version="0.4.0",
     author="Mikael Koli",
     author_email="koli.mikael@gmail.com",
     packages=find_packages(),
