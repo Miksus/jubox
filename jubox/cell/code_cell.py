@@ -51,9 +51,18 @@ class CodeCell(JupyterCell):
         nb = self.to_notebook()
         return nb(*args, **kwargs)
 
-    def exec(self, *args):
-        "Execute the code in the cell"
-        exec(self.source, *args)
+    def exec(self, globals=None, locals=None):
+        """Execute the code in the cell with current Python interpreter
+
+        Arguments:
+        ----------
+            globals {Dict} : Global variables for exec function. If undefined, the created global dict is returned
+            locals {Dict} : Local variables for exec function
+        """
+        if globals is None:
+            globals = {}
+        exec(self.source, globals, locals)
+        return globals
 
     @classmethod
     def from_source_code(cls, string, **kwargs):
