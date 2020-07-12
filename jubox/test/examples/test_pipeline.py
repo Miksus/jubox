@@ -51,14 +51,14 @@ def test_pipeline_generated():
     with pytest.raises(CellExecutionError):
         nb(inplace=True)
 
-    err_cell = nb.error_cells[0]
-    html_tb = err_cell.get_output_as_html()
+    err_cell = nb.cells.errors[0]
+    html_tb = err_cell.outputs.as_html()
 
     assert "NameError" in html_tb
     assert "is not defined" in html_tb
     assert "Traceback (most recent call last)" in html_tb
     
-    text_tb = err_cell.get_output_as_html()
+    text_tb = err_cell.outputs.as_html()
     assert "NameError" in text_tb
     assert "is not defined" in text_tb
     assert "Traceback (most recent call last)" in text_tb
