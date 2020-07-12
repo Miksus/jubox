@@ -4,6 +4,8 @@ import nbformat
 
 import copy
 
+from jubox.utils.html import get_css
+
 class JupyterObject:
     """
     Base class for Jubox classes
@@ -32,3 +34,8 @@ class JupyterObject:
         for k, v in self.__dict__.items():
             setattr(result, k, copy.deepcopy(v, memo))
         return result
+
+    @staticmethod
+    def get_css():
+        "Get CSS used in Jupyter Notebooks"
+        return get_css()

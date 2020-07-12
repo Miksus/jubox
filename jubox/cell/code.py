@@ -222,17 +222,13 @@ class CodeCell(JupyterCell):
     @property
     def has_error(self):
         "Whether cell has error in output"
-        # TODO: Modify when accessors complete
         outputs = self._node.get("outputs", [])
-        return any(
-            output["output_type"] == "error"
-            for output in outputs
-        )
+        return bool(self.outputs.errors)
 
     @property
     def has_execute_result(self):
         "Whether cell has execution results (returned variable)"
-        return len(self.execution_results) > 0
+        return bool(self.outputs.execution_results)
 
 
 def register_accessor(name):
